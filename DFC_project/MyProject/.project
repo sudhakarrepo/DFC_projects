@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>MyProject</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.jdt.core.javabuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>Conf</name>
+			<type>2</type>
+			<location>C:/config/Conf</location>
+		</link>
+		<link>
+			<name>config</name>
+			<type>2</type>
+			<location>C:/config</location>
+		</link>
+	</linkedResources>
+</projectDescription>
