@@ -216,12 +216,14 @@ public class App {
 		}
 	}
 	public static void start() {
+
 		App app = new App();
+
 		final String QUERY_GETALL_USERS = "select * from dm_user";
-		String cabinetName 		=	"DFC cabinet";
-		String fileName			=	"file.pdf";
-		String customObjectName	=	"dfc_document";
-		String genCSVFileName	=	"generated_reports.csv";
+		String cabinetName 				=	"DFC cabinet";
+		String fileName					=	"file.pdf";
+		String customObjectName			=	"dfc_document";
+		String genCSVFileName			=	"generated_reports.csv";
 		 try {
 			 app.createConnection();
 			 app.createAndAddUserToGroup();
