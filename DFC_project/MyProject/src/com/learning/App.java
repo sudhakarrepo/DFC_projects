@@ -69,6 +69,8 @@ public class App {
 					if(user.getUserName().trim().equals("")) throw new DfException("Emty username is not accepted..");
 					group.appendString("users_names", user.getUserName());
 					user.setString("user_group_name", group.getGroupName());
+					group.save();
+					user.save();
 					
 				}
 			catch(DfException e) { 
