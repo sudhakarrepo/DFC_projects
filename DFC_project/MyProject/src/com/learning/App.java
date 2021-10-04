@@ -32,8 +32,8 @@ public class App {
 		try {
 			Properties prop = new Properties();
 			prop.load(new FileReader("config.properties"));
-			DfLogger.info(this, " ",null, null);
-			this.clientX 				=  new DfClientX();
+			DfLogger.info(this, "config's are loaded",null, null);
+			this.clientX 			=  new DfClientX();
 			IDfClient client  		=  clientX.getLocalClient();
 			IDfLoginInfo info  		=  clientX.getLoginInfo();
 			IDfSessionManager smgr	=  client.newSessionManager();
