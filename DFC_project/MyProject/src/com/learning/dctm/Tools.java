@@ -1,4 +1,4 @@
-package com.learning;
+package com.learning.dctm;
 
 import java.io.File;
 import java.io.FileWriter;

@@ -1,6 +1,8 @@
-package com.learning;
+package com.learning.dctm;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Calendar;
@@ -28,12 +30,14 @@ public class App {
 	private  IDfClientX clientX;
 	private  IDfSession session;
 	private  String dfcACLId;
+	private Properties internalProp;
 	public  void createConnection() {
 		try {
+			internalProp =  new Properties();
 			Properties prop = new Properties();
 			prop.load(new FileReader("config.properties"));
-			DfLogger.info(this, "config's are loaded",null, null);
-			this.clientX 			=  new DfClientX();
+			DfLogger.info(this, " ",null, null);
+			this.clientX 				=  new DfClientX();
 			IDfClient client  		=  clientX.getLocalClient();
 			IDfLoginInfo info  		=  clientX.getLoginInfo();
 			IDfSessionManager smgr	=  client.newSessionManager();
@@ -42,11 +46,19 @@ public class App {
 			info.setPassword(prop.getProperty("pass"));
 			smgr.setIdentity(prop.getProperty("repos"), info);
 			this.session = smgr.getSession(prop.getProperty("repos"));
+			
 			DfLogger.info(this,"connected to server", null, null);
 		}catch(DfException | IOException e) {
 			DfLogger.error(this, "failed to create session", null, e);
 		}
 	} 
+	private void saveInternalsProp(){
+		try {
+			this.internalProp.store(new FileOutputStream("internals.properties"), "internals for object id\nlast created object's");
+		} catch (Exception e) {
+			DfLogger.error(this, "unable to create internals.properties",null, e);
+		}
+	}
 	private IDfUser createUser(String userName, String password , String email) throws DfException {
 		IDfUser user =  (IDfUser) session.newObject("dm_user");
 		user.setUserName(userName);
@@ -55,12 +67,14 @@ public class App {
 		user.setUserLoginName(userName);
 		user.setUserPassword(email);
 		user.save();
+		this.internalProp.put("id.dfc_user_id", user.getString("r_object_id"));
 		return user;
 	}
 	private IDfGroup createGroup(String groupName) throws DfException {
 		IDfGroup group = (IDfGroup) session.newObject("dm_group");
 		group.setGroupName(groupName);
 		group.save();
+		this.internalProp.put("id.dfc_group_id", group.getString("r_object_id"));
 		return group;
 	}
 	private void addUsersToGroup(IDfGroup group, IDfUser... users) throws DfException {
@@ -88,6 +102,7 @@ public class App {
 			acl.grant("dm_owner", IDfACL.DF_PERMIT_DELETE, IDfACL.DF_XPERMIT_DELETE_OBJECT_STR);
 			acl.save();
 			this.dfcACLId = acl.getString("r_object_id");
+			this.internalProp.put("id.dfc_acl_id", this.dfcACLId);
 			
 			DfLogger.info(this,"created "+aclName+" object", null, null);
 		}catch(DfException e) {
@@ -111,6 +126,7 @@ public class App {
 			IDfFolder cabinet =  (IDfFolder) session.newObject("dm_cabinet");
 			cabinet.setObjectName(cabinetName);
 			cabinet.save();
+			this.internalProp.put("id.dfc_cabinet_id", cabinet.getString("r_object_id"));
 			DfLogger.info(this, "created cabinet:"+cabinetName, null, null);
 			 
 		}catch(DfException e) {
@@ -130,7 +146,7 @@ public class App {
 			query.execute(session, DfQuery.DF_QUERY);
 			query.setDQL("alter type dfc_document modify acl_name (default 'dfc_acl'), acl_domain ( default 'admin')");
 			query.execute(session, DfQuery.DF_QUERY);
-	
+			
 			DfLogger.info(this,"created custom type:"
 							+typeName+" of supertype:dm_document", null, null);
 		}catch(Exception e) {
@@ -167,6 +183,7 @@ public class App {
 				doc.setFile(file.getAbsolutePath());
 				doc.link(dstFolderPath);
 				doc.save();
+				this.internalProp.put("id.dfc_file_id", doc.getString("r_object_id"));
 			
 				DfLogger.info(this, doc.getTypeName()+" object is created and imported to"+dstFolderPath, null,null);
 			}  else {
@@ -178,19 +195,7 @@ public class App {
 				}
 		 
 	}
-	private void deleteDocument(String objectPath) throws DfException {
-		try {
-			 IDfDocument doc = (IDfDocument) this.session.getObjectByPath(objectPath);
-			 doc.destroy();
-			 DfLogger.info(this,"object is deleted", null, null);
-			
-		}
-		catch(DfException e) {
-			
-			 DfLogger.warn(this, "unable to delete uploaded document", null, null);
-			} 
-		
-	}
+
 	private void generateCSVFromQuery(String q,String fileName) throws IOException {
 	
 		DfQuery dfQuery = new DfQuery();
@@ -218,14 +223,12 @@ public class App {
 		}
 	}
 	public static void start() {
-
 		App app = new App();
-
 		final String QUERY_GETALL_USERS = "select * from dm_user";
-		String cabinetName 				=	"DFC cabinet";
-		String fileName					=	"file.pdf";
-		String customObjectName			=	"dfc_document";
-		String genCSVFileName			=	"generated_reports.csv";
+		String cabinetName 		=	"DFC cabinet";
+		String fileName			=	"file.pdf";
+		String customObjectName	=	"dfc_document";
+		String genCSVFileName	=	"generated_reports.csv";
 		 try {
 			 app.createConnection();
 			 app.createAndAddUserToGroup();
@@ -233,9 +236,9 @@ public class App {
 			 app.createCabinet(cabinetName);
 			 app.createCustomTypeOfDocument(customObjectName);
 			 app.uploadFileToRepos(fileName,cabinetName,customObjectName);
-			 app.deleteDocument("/"+cabinetName+"/"+fileName);
 			 app.generateCSVFromQuery(QUERY_GETALL_USERS,genCSVFileName);
 			 app.closeSession();
+			 app.saveInternalsProp();
 			 DfLogger.info(app, "All Works are successfully finished..", null, null);
 		 }catch(Exception e) {
 			 DfLogger.error(app,"! application is crashed some operation are may or may not executed.",null,e);
