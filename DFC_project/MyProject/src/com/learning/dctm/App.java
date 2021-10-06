@@ -1,7 +1,6 @@
 package com.learning.dctm;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -36,8 +35,7 @@ public class App {
 			internalProp =  new Properties();
 			Properties prop = new Properties();
 			prop.load(new FileReader("config.properties"));
-			DfLogger.info(this, " ",null, null);
-			this.clientX 				=  new DfClientX();
+			this.clientX 			=  new DfClientX();
 			IDfClient client  		=  clientX.getLocalClient();
 			IDfLoginInfo info  		=  clientX.getLoginInfo();
 			IDfSessionManager smgr	=  client.newSessionManager();
@@ -47,16 +45,21 @@ public class App {
 			smgr.setIdentity(prop.getProperty("repos"), info);
 			this.session = smgr.getSession(prop.getProperty("repos"));
 			
-			DfLogger.info(this,"connected to server", null, null);
+			logInfo("connected to server");
 		}catch(DfException | IOException e) {
-			DfLogger.error(this, "failed to create session", null, e);
+			logError("failed to create session", e);
 		}
 	} 
+	void logInfo(String msg) {DfLogger.info(this,msg,null, null);}
+	void logError(String msg,Exception ex) {DfLogger.error(this,msg,null, ex);}
+	void logWarn(String msg,Exception ex) {DfLogger.warn(this,msg,null, ex);}
+	void logFatal(String msg, Exception ex) {DfLogger.fatal(this,msg,null, ex);}
 	private void saveInternalsProp(){
 		try {
 			this.internalProp.store(new FileOutputStream("internals.properties"), "internals for object id\nlast created object's");
+			logInfo("created file: internals.properties ");
 		} catch (Exception e) {
-			DfLogger.error(this, "unable to create internals.properties",null, e);
+			logError("unable to create internals.properties",e);
 		}
 	}
 	private IDfUser createUser(String userName, String password , String email) throws DfException {
@@ -85,11 +88,10 @@ public class App {
 					user.setString("user_group_name", group.getGroupName());
 					group.save();
 					user.save();
-					
+					logInfo("Added user:"+user.getUserName()+" to group:"+group.getGroupName());
 				}
 			catch(DfException e) { 
-				System.out.println(" unable to add user"+user.getUserName());
-				DfLogger.warn(this,"unable to add user:"+user.getUserName()+"to group:"+group.getGroupName(),null,e);
+				logError("unable to add user:"+user.getUserName()+"to group:"+group.getGroupName(),e);
 			}
 		}
 	}
@@ -104,9 +106,9 @@ public class App {
 			this.dfcACLId = acl.getString("r_object_id");
 			this.internalProp.put("id.dfc_acl_id", this.dfcACLId);
 			
-			DfLogger.info(this,"created "+aclName+" object", null, null);
+			logInfo("created "+aclName+" object");
 		}catch(DfException e) {
-			DfLogger.error(this,"unable to create "+aclName+" object", null, e);
+			logError("unable to create "+aclName+" object",e); 
 		}
 		
 	}
@@ -116,7 +118,7 @@ public class App {
 			 
 			addUsersToGroup(createGroup("dfc_group"), createUser("dfc_user","super","dfc_user@mail.com"));
 		}catch(Exception e){
-			DfLogger.error(this, "unable to create/add user or group ", null, e);
+			logError("unable to create/add user or group ",e);
 		}
 		
 	}
@@ -127,10 +129,10 @@ public class App {
 			cabinet.setObjectName(cabinetName);
 			cabinet.save();
 			this.internalProp.put("id.dfc_cabinet_id", cabinet.getString("r_object_id"));
-			DfLogger.info(this, "created cabinet:"+cabinetName, null, null);
+			logInfo("created cabinet:"+cabinetName);
 			 
 		}catch(DfException e) {
-			DfLogger.error(this, "unable to create cabinet:"+cabinetName, null, e);
+			logError("unable to create cabinet:"+cabinetName, e);
 			
 		}
 	}
@@ -147,11 +149,11 @@ public class App {
 			query.setDQL("alter type dfc_document modify acl_name (default 'dfc_acl'), acl_domain ( default 'admin')");
 			query.execute(session, DfQuery.DF_QUERY);
 			
-			DfLogger.info(this,"created custom type:"
-							+typeName+" of supertype:dm_document", null, null);
+			logInfo("created custom type:"
+							+typeName+" of supertype:dm_document");
 		}catch(Exception e) {
-			DfLogger.error(this, "unable to create custom type object:"
-						+typeName+" of supertype:dm_document", null, e);
+			logError("unable to create custom type object:"
+					+typeName+" of supertype:dm_document",e);
 		}
 	}
 	private String getDocDefaultACLName() throws DfException {
@@ -185,13 +187,13 @@ public class App {
 				doc.save();
 				this.internalProp.put("id.dfc_file_id", doc.getString("r_object_id"));
 			
-				DfLogger.info(this, doc.getTypeName()+" object is created and imported to"+dstFolderPath, null,null);
+				logInfo(doc.getTypeName()+" object is created and imported to"+dstFolderPath);
 			}  else {
-				DfLogger.error(this, "ACL verification failed so document is unable to import", null, null);
+				logWarn("ACL verification failed so document is unable to import",null);
 				
 			}
 			} else {
-				DfLogger.error(this, "File Path is not valid", null, null);
+				logError("File Path is not valid",null);
 				}
 		 
 	}
@@ -204,13 +206,13 @@ public class App {
 		try {
 			IDfCollection col =  dfQuery.execute(session, DfQuery.DF_READ_QUERY);
 			if( Tools.convertQueryResultToCSV(col, fileName) ){
-				DfLogger.info(this, fileName+" file Successfully generated...", null, null);
+				logInfo(fileName+" file Successfully generated...");
 			}else {
-				DfLogger.warn(this,"unable to convert result to "+fileName+" file",null,null);
+				logError("unable to convert result to "+fileName+" file",null);
 			}
 			
 		} catch (DfException e) {
-			DfLogger.error(this, "failed to create "+fileName, null, e);
+			logError("failed to create "+fileName,e);
 		}
 	}
 	private void closeSession() {
@@ -218,7 +220,7 @@ public class App {
 			try {
 				session.disconnect();
 			} catch (DfException e) {
-				 DfLogger.error(this, "unable to close sessoin", null, e);
+				 logWarn("unable to close session",e);
 			}
 		}
 	}
@@ -239,9 +241,9 @@ public class App {
 			 app.generateCSVFromQuery(QUERY_GETALL_USERS,genCSVFileName);
 			 app.closeSession();
 			 app.saveInternalsProp();
-			 DfLogger.info(app, "All Works are successfully finished..", null, null);
+			 app.logInfo("All Works are successfully finished..");
 		 }catch(Exception e) {
-			 DfLogger.error(app,"! application is crashed some operation are may or may not executed.",null,e);
+			 app.logError("! application is crashed some operation are may or may not executed.", e);
 		 }
 	}
 	
